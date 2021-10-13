@@ -108,8 +108,7 @@ class Blocks {
   generatePiece () {
     const rand = Math.floor(Math.random() * this.shapes.length);
     const shape = this.shapes[rand];
-    // this.active = new shape(this);
-    this.active = new shapes.ShapeT(this);
+    this.active = new shape(this);
   }
   
   stop () {

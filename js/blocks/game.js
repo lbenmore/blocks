@@ -4,7 +4,7 @@ import * as shapes from './shapes.js';
 class Blocks {
   updateView () {
     this.target.innerHTML = `
-      <table>
+      <table class="blocks_${this.id}">
       ${this.board.map((row, y) => `
         <tr>
         ${row.map((cell, x) => `
@@ -13,7 +13,7 @@ class Blocks {
         </tr>
       `).join('')}
       </table>
-    `;  
+    `; 
   }
   
   controls (evt) {
@@ -29,51 +29,43 @@ class Blocks {
       });
     }
     
+    this.stop();
+    clearCurrent();
+    
     switch (evt.keyCode) {
       case 37:
-        if (!this.active) return false;
-        if (this.active.x === 0) return false;
+        if (!this.active) break;
+        if (this.active.x === 0) break;
         
-        this.stop();
-        clearCurrent();
         --this.active.x;
         if (this.active.canContinue()) this.active.updatePlacement();
         else ++this.active.x;
-        this.start();
         break;
         
       case 39:
-        if (!this.active) return false;
-        if (this.active.x === this.size - this.active.width ) return false;
+        if (!this.active) break;
+        if (this.active.x === this.size - this.active.width ) break;
         
-        this.stop();
-        clearCurrent();
         ++this.active.x;
         if (this.active.canContinue()) this.active.updatePlacement();
         else --this.active.x;
-        this.start();
         break;
         
       case 40:
-        // if (this.active.y + this.active.height >= this.size) return;
-        this.stop();
-        clearCurrent();
+        if (this.active.y + this.active.height === this.size) break;
+      
         ++this.active.y;
         if (this.active.canContinue()) this.active.updatePlacement();
         else --this.active.y;
-        this.start();
         break;
         
       case 16:
         if (!this.active) return false;
         
-        this.stop();
-        clearCurrent();
-        
         const currentShape = [ ...this.active.shape ];
         const currentX = this.active.x;
         const shape = [];
-        for (let i = 0; i < this.active.shape[0].length; i++) {
+        for (let i = this.active.shape[0].length - 1; i >= 0; i--) {
           const row = [];
           for (let j = 0; j < this.active.shape.length; j++) {
             row.push(this.active.shape[j][i]);
@@ -91,8 +83,9 @@ class Blocks {
           this.active.shape = currentShape;
           this.active.x = currentX;
         }
-        this.start();
     }
+    
+    this.start();
   }
   
   checkForCompleteRow () {
@@ -115,8 +108,8 @@ class Blocks {
   generatePiece () {
     const rand = Math.floor(Math.random() * this.shapes.length);
     const shape = this.shapes[rand];
-    this.active = new shape(this);
-    // this.active = new shapes.ShapeBox(this);
+    // this.active = new shape(this);
+    this.active = new shapes.ShapeT(this);
   }
   
   stop () {
@@ -141,8 +134,29 @@ class Blocks {
     });
   }
   
+  stylize () {
+    const style = document.createElement('style');
+    const { height } = this.target.getBoundingClientRect();
+    
+    style.innerHTML = `
+      .blocks_${this.id} {
+        table-layout: fixed;
+        width: 100%;
+        height: 100%;
+        border-spacing: 0;
+      }
+      
+      .blocks_${this.id} td {
+        height: ${height / this.size}px
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+  
   eventListeners () {
     addEventListener('keyup', this.controls.bind(this));
+    addEventListener('resize', this.stylize.bind(this));
   }
   
   constructor (target, options = {}) {
@@ -153,11 +167,13 @@ class Blocks {
     this.board = this.initBoard();
     this.pieces = [];
     this.shapes = [];
+    this.id = Math.random().toString(16).slice(2);
     for (const shape in shapes) this.shapes.push(shapes[shape]);
     
     this.updateView();
-    this.start();
+    this.stylize();
     this.eventListeners();
+    this.start();
   }
 }
 

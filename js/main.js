@@ -5,4 +5,6 @@ window.addEventListener('error', () => {
   game.stop();
 });
 
-$$('#stop').on('click', game.stop.bind(game));
+$$('button').on('click', evt => {
+  game[evt.target.id].call(game);
+});

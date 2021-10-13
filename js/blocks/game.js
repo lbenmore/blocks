@@ -19,8 +19,7 @@ class Blocks {
   controls (evt) {
     const _this = this;
     
-    // if (this.active.y + this.active.height === this.size - 1) return;
-    if (!this.active.canContinue()) return;
+    if (!this.active || !this.active.canContinue()) return;
     
     function clearCurrent () {
       _this.active.shape.forEach((row, y) => {
@@ -49,6 +48,15 @@ class Blocks {
         this.stop();
         clearCurrent();
         ++this.active.x;
+        this.active.updatePlacement();
+        this.start();
+        break;
+        
+      case 40:
+        if (this.active.y + this.active.height >= this.size) return;
+        this.stop();
+        clearCurrent();
+        ++this.active.y;
         this.active.updatePlacement();
         this.start();
         break;

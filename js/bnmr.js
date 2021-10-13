@@ -60,7 +60,7 @@
       
       el.on = (evtName, fn, opts) => {
         if (el.length) {
-          el.forEach(_el => $$(_el).on(evt, fn, opts));
+          el.forEach(_el => $$(_el).on(evtName, fn, opts));
           return el;
         }
         

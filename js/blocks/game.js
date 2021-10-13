@@ -19,6 +19,9 @@ class Blocks {
   controls (evt) {
     const _this = this;
     
+    // if (this.active.y + this.active.height === this.size - 1) return;
+    if (!this.active.canContinue()) return;
+    
     function clearCurrent () {
       _this.active.shape.forEach((row, y) => {
         row.forEach((cell, x) => {
@@ -64,7 +67,11 @@ class Blocks {
           }
           shape.push(row);
         }
+        
         this.active.shape = shape;
+        this.active.height = shape.length;
+        this.active.width = shape[0].length;
+        if (this.active.x + this.active.width > this.size - 1) --this.active.x;
         
         this.active.updatePlacement();
         this.start();
@@ -89,10 +96,10 @@ class Blocks {
   }
   
   generatePiece () {
-    // const rand = Math.floor(Math.random() * this.shapes.length);
-    // const shape = this.shapes[rand];
-    // this.active = new shape(this);
-    this.active = new shapes.ShapeBox(this);
+    const rand = Math.floor(Math.random() * this.shapes.length);
+    const shape = this.shapes[rand];
+    this.active = new shape(this);
+    // this.active = new shapes.ShapeBox(this);
   }
   
   stop () {

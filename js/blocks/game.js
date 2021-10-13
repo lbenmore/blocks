@@ -37,7 +37,8 @@ class Blocks {
         this.stop();
         clearCurrent();
         --this.active.x;
-        this.active.updatePlacement();
+        if (this.active.canContinue()) this.active.updatePlacement();
+        else ++this.active.x;
         this.start();
         break;
         
@@ -48,16 +49,18 @@ class Blocks {
         this.stop();
         clearCurrent();
         ++this.active.x;
-        this.active.updatePlacement();
+        if (this.active.canContinue()) this.active.updatePlacement();
+        else --this.active.x;
         this.start();
         break;
         
       case 40:
-        if (this.active.y + this.active.height >= this.size) return;
+        // if (this.active.y + this.active.height >= this.size) return;
         this.stop();
         clearCurrent();
         ++this.active.y;
-        this.active.updatePlacement();
+        if (this.active.canContinue()) this.active.updatePlacement();
+        else --this.active.y;
         this.start();
         break;
         
@@ -67,6 +70,8 @@ class Blocks {
         this.stop();
         clearCurrent();
         
+        const currentShape = [ ...this.active.shape ];
+        const currentX = this.active.x;
         const shape = [];
         for (let i = 0; i < this.active.shape[0].length; i++) {
           const row = [];
@@ -81,7 +86,11 @@ class Blocks {
         this.active.width = shape[0].length;
         if (this.active.x + this.active.width > this.size - 1) --this.active.x;
         
-        this.active.updatePlacement();
+        if (this.active.canContinue()) this.active.updatePlacement();
+        else {
+          this.active.shape = currentShape;
+          this.active.x = currentX;
+        }
         this.start();
     }
   }

@@ -113,6 +113,7 @@ class Blocks {
   
   stop () {
     clearInterval(this.playInterval);
+    this.playing = false;
   }
   
   start () {
@@ -120,6 +121,7 @@ class Blocks {
       if (!_this.active) _this.generatePiece();
       else _this.advanceActivePiece();
     }, this.speed, this);
+    this.playing = true;
   }
   
   gameOver () {

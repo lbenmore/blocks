@@ -45,6 +45,19 @@ export class ShapeS extends Piece {
   }
 }
 
+export class ShapeI extends Piece {
+  constructor (game) {
+    super(game);
+    this.shape = [
+      [ 1 ],
+      [ 1 ],
+      [ 1 ],
+      [ 1 ]
+    ];
+    this.initOnBoard();
+  }
+}
+
 export class ShapeBox extends Piece {
   constructor (game) {
     super(game);

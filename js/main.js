@@ -1,6 +1,7 @@
 import Blocks from './blocks/game.js';
 
 const game = new Blocks($$('.game__board'), { size: 12, speed: 500 });
+game.events.addEventListener('blocks.gameover', evt => console.log(evt.type));
 
 addEventListener('error', () => {
   game.stop();

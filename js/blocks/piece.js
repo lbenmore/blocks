@@ -38,27 +38,20 @@ export default class Piece {
   }
   
   updatePlacement () {
-    if (!this.canContinue()) {
-      this.game.checkForCompleteRow()
-      this.game.active = false;
-    } else {
-      this.y - 1 >= 0 && this.game.board[this.y - 1].splice(this.x, this.width, ...Array(this.width).fill(0));
-      this.shape.forEach((row, y) => {
-        const values = row.map((cell, x) => {
-          const thisShapeHasValue = !!cell;
-          const clearCell = y !== this.shape.length - 1 && !cell;
-          const boardCellValue = this.game.board[this.y + y][this.x + x];
-          return thisShapeHasValue ? this.color : clearCell ? 0 : boardCellValue || 0;
-        });
-        this.game.board[this.y + y].splice(this.x, row.length, ...values);
+    this.y - 1 >= 0 && this.game.board[this.y - 1].splice(this.x, this.width, ...Array(this.width).fill(0));
+    this.shape.forEach((row, y) => {
+      const values = row.map((cell, x) => {
+        const thisShapeHasValue = !!cell;
+        const clearCell = y !== this.shape.length - 1 && !cell;
+        const boardCellValue = this.game.board[this.y + y][this.x + x];
+        return thisShapeHasValue ? this.color : clearCell ? 0 : boardCellValue || 0;
       });
-      
-      this.game.updateView();
-      
-      ++this.y;
-      
-      this.y === 1 && !this.canContinue() && this.game.gameOver();
-    }
+      this.game.board[this.y + y].splice(this.x, row.length, ...values);
+    });
+    
+    this.game.updateView();
+    
+    ++this.y;
   }
   
   initOnBoard () {

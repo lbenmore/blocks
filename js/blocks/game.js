@@ -18,74 +18,84 @@ class Blocks {
   
   controls (evt) {
     const _this = this;
+    const { active } = this;
     
-    if (!this.active || !this.active.canContinue()) return;
+    if (!active || !active.canContinue()) return;
     
     function clearCurrent () {
-      _this.active.shape.forEach((row, y) => {
+      active.shape.forEach((row, y) => {
         row.forEach((cell, x) => {
-          _this.board[_this.active.y - 1 + y][_this.active.x + x] = 0;  
+          const value = active.shape[y][x] ? 0 : _this.board[active.y - 1 + y][active.x + x] || 0;
+          _this.board[active.y - 1 + y][active.x + x] = value;  
         });
       });
     }
     
-    this.stop();
     clearCurrent();
     
     switch (evt.keyCode) {
       case 37:
-        if (!this.active) break;
-        if (this.active.x === 0) break;
+        if (!active) break;
+        if (active.x === 0) break;
         
-        --this.active.x;
-        if (this.active.canContinue()) this.active.updatePlacement();
-        else ++this.active.x;
+        --active.x;
+        if (active.canContinue()) active.updatePlacement();
+        else ++active.x;
         break;
         
       case 39:
-        if (!this.active) break;
-        if (this.active.x === this.size - this.active.width ) break;
+        if (!active) break;
+        if (active.x === this.size - active.width ) break;
         
-        ++this.active.x;
-        if (this.active.canContinue()) this.active.updatePlacement();
-        else --this.active.x;
+        ++active.x;
+        if (active.canContinue()) active.updatePlacement();
+        else --active.x;
         break;
         
       case 40:
-        if (this.active.y + this.active.height === this.size) break;
+        if (active.y + active.height === this.size) break;
       
-        ++this.active.y;
-        if (this.active.canContinue()) this.active.updatePlacement();
-        else --this.active.y;
+        ++active.y;
+        if (active.canContinue()) active.updatePlacement();
+        else --active.y;
         break;
         
       case 16:
-        if (!this.active) return false;
+        if (!active) return false;
         
-        const currentShape = [ ...this.active.shape ];
-        const currentX = this.active.x;
+        const currentShape = [ ...active.shape ];
+        const {
+          x: currentX,
+          width: currentWidth,
+          height: currentHeight
+        } = active;
         const shape = [];
-        for (let i = this.active.shape[0].length - 1; i >= 0; i--) {
+        for (let i = active.shape[0].length - 1; i >= 0; i--) {
           const row = [];
-          for (let j = 0; j < this.active.shape.length; j++) {
-            row.push(this.active.shape[j][i]);
+          for (let j = 0; j < active.shape.length; j++) {
+            row.push(active.shape[j][i]);
           }
           shape.push(row);
         }
         
-        this.active.shape = shape;
-        this.active.height = shape.length;
-        this.active.width = shape[0].length;
-        if (this.active.x + this.active.width > this.size - 1) --this.active.x;
+        active.shape = shape;
+        active.height = shape.length;
+        active.width = shape[0].length;
+        if (active.x + active.width > this.size - 1) --active.x;
         
-        if (this.active.canContinue()) this.active.updatePlacement();
+        if (active.canContinue()) active.updatePlacement();
         else {
-          this.active.shape = currentShape;
-          this.active.x = currentX;
+          active.shape = currentShape;
+          active.x = currentX;
+          active.width = currentWidth;
+          active.height = currentHeight;
         }
     }
-    
-    this.start();
+  }
+  
+  checkForGameOver () {
+    const gameover = !!this.board[0].filter(cell => !!cell).length;
+    return true;
   }
   
   checkForCompleteRow () {
@@ -96,8 +106,9 @@ class Blocks {
         chunkToMoveDown.pop();
         this.board.unshift(Array(this.size).fill(0), ...chunkToMoveDown);
         this.updateView();
+        this.fireEvent('rowcleared');
       }
-    })
+    });
   }
   
   advanceActivePiece () {
@@ -109,24 +120,37 @@ class Blocks {
     const rand = Math.floor(Math.random() * this.shapes.length);
     const shape = this.shapes[rand];
     this.active = new shape(this);
+    this.fireEvent('newpiece');
   }
   
   stop () {
     clearInterval(this.playInterval);
     this.playing = false;
+    this.fireEvent('pause');
+  }
+  
+  gameplay () {
+    if (!this.active) {
+      this.checkForCompleteRow();
+      this.generatePiece();
+    } else if (this.active.canContinue()) {
+      this.advanceActivePiece();
+    } else {
+      this.active = null;
+      this.checkForCompleteRow();
+      this.generatePiece();
+    }
   }
   
   start () {
-    this.playInterval = setInterval((_this) => {
-      if (!_this.active) _this.generatePiece();
-      else _this.advanceActivePiece();
-    }, this.speed, this);
+    this.playInterval = setInterval(this.gameplay.bind(this), this.speed);
     this.playing = true;
+    this.fireEvent('play');
   }
   
   gameOver () {
     this.stop();
-    console.log('game over');
+    this.fireEvent('gameover');
   }
   
   initBoard () {
@@ -155,6 +179,14 @@ class Blocks {
     document.head.appendChild(style);
   }
   
+  namespace (...args) {
+    return [ this.name, ...args ].join('.');
+  }
+  
+  fireEvent (...args) {
+    this.events.dispatchEvent(new CustomEvent(this.namespace(...args)));
+  }
+  
   eventListeners () {
     addEventListener('keyup', this.controls.bind(this));
     addEventListener('resize', this.stylize.bind(this));
@@ -165,6 +197,8 @@ class Blocks {
     this.size = options.size || 12;
     this.speed = options.speed || 1000;
     this.colors = options.colors || [ '#f04', '#0f8', '#08f', '#80f' ];
+    this.name = options.name || 'blocks';
+    this.events = document.createElement('div');
     this.board = this.initBoard();
     this.pieces = [];
     this.shapes = [];

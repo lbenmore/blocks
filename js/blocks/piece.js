@@ -4,14 +4,18 @@ export default class Piece {
   }
   
   pieceIsBelow () {
+    console.log('** pieceIsBelow **');
     const hasCollisions = this.shape.reduce((result, row, y) => {
+      console.log('** row start **');
       if (result) return result;
       row.forEach((cell, x) => {
         const cellHasValue = !!cell;
         const nextRowOnBoardHasValue = !!this.game.board[this.y + y + 1] && !!this.game.board[this.y + y + 1][this.x + x];
         const nextRowInShapeHasValue = !!this.shape[y + 1] ? !!this.shape[y + 1][x] : false;
+        console.log(cellHasValue, nextRowOnBoardHasValue, !nextRowInShapeHasValue);
         if (cellHasValue && nextRowOnBoardHasValue && !nextRowInShapeHasValue) result = true;
       });
+      console.log('** row end **', result);
       return result;
     }, false);
     return hasCollisions;

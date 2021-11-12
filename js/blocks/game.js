@@ -79,7 +79,7 @@ class Blocks {
       break;
         
       case 40:
-        if (active.y + active.height - 1 === this.size) break;
+        if (active.y + active.height === this.size) break;
       
         ++active.y;
         
@@ -116,7 +116,7 @@ class Blocks {
         active.width = shape[0].length;
         if (active.x + active.width > this.size - 1) --active.x;
         
-        if (active.canContinue()) {
+        if (canMove(stormtrooper)) {
           this.board = stormtrooper;
           active.updatePlacement();
           this.updateView();

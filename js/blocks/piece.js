@@ -1,6 +1,6 @@
 export default class Piece {
   isAtBottom () {
-    return this.y + this.height - 1 === this.game.size;
+    return this.y + this.height === this.game.size;
   }
   
   pieceIsBelow () {
@@ -8,13 +8,12 @@ export default class Piece {
       if (result) return result;
       row.forEach((cell, x) => {
         const cellHasValue = !!cell;
+        const nextRowOnBoardHasValue = !!this.game.board[this.y + y + 1] && !!this.game.board[this.y + y + 1][this.x + x];
         const nextRowInShapeHasValue = !!this.shape[y + 1] ? !!this.shape[y + 1][x] : false;
-        const nextRowOnBoardHasValue = !!this.game.board[this.y + y][this.x + x];
         if (cellHasValue && nextRowOnBoardHasValue && !nextRowInShapeHasValue) result = true;
       });
       return result;
     }, false);
-    
     return hasCollisions;
   }
   
@@ -37,21 +36,21 @@ export default class Piece {
     }
   }
   
-  updatePlacement () {
+  updatePlacement (adjustments) {
     this.y - 1 >= 0 && this.game.board[this.y - 1].splice(this.x, this.width, ...Array(this.width).fill(0));
     this.shape.forEach((row, y) => {
       const values = row.map((cell, x) => {
-        const thisShapeHasValue = !!cell;
-        const clearCell = y !== this.shape.length - 1 && !cell;
+        if (adjustments) {
+          adjustments.x && (x += adjustments.x);
+          adjustments.y && (y += adjustments.y);
+        }
+        const thisCellHasValue = !!cell;
+        const clearCell = !thisCellHasValue && this.shape[y + 1] && this.shape[y + 1][x];
         const boardCellValue = this.game.board[this.y + y][this.x + x];
-        return thisShapeHasValue ? this.color : clearCell ? 0 : boardCellValue || 0;
+        return thisCellHasValue ? this.color : clearCell ? 0 : boardCellValue || 0;
       });
       this.game.board[this.y + y].splice(this.x, row.length, ...values);
     });
-    
-    this.game.updateView();
-    
-    ++this.y;
   }
   
   initOnBoard () {

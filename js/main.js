@@ -6,7 +6,7 @@ game.events.addEventListener('blocks.gameover', evt => console.log(evt.type));
 addEventListener('error', () => {
   game.stop();
 });
-$$('button').on('click', evt => {
+$$('.game__controls button').on('click', evt => {
   game[evt.target.id].call(game);
 });
 

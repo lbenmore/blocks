@@ -19,19 +19,33 @@ class Blocks {
   controls (evt) {
     const _this = this;
     const { active } = this;
+    const stormtrooper = this.board.map(row => row.map(x => x));
     
-    if (!active || !active.canContinue()) return;
+    if (!active) return;
     
-    function clearCurrent () {
+    function clearActiveFromBoard (board) {
       active.shape.forEach((row, y) => {
         row.forEach((cell, x) => {
-          const value = active.shape[y][x] ? 0 : _this.board[active.y - 1 + y][active.x + x] || 0;
-          _this.board[active.y - 1 + y][active.x + x] = value;  
+          const value = active.shape[y][x] ? 0 : board[active.y + y][active.x + x] || 0;
+          board[active.y + y][active.x + x] = value;
         });
       });
     }
     
-    clearCurrent();
+    function canMove (board) {
+      return active.shape.reduce((result, row, y) => {
+        const { shape } = active;
+        if (!result) return result;
+        row.forEach((cell, x) => {
+          const cellHasValue = !!cell;
+          const boardHasValue = board[active.y + y] && board[active.y + y][active.x + x];
+          if (cellHasValue && boardHasValue) result = false;
+        });
+        return result;
+      }, true);
+    }
+    
+    clearActiveFromBoard(stormtrooper);
     
     switch (evt.keyCode) {
       case 37:
@@ -39,26 +53,44 @@ class Blocks {
         if (active.x === 0) break;
         
         --active.x;
-        if (active.canContinue()) active.updatePlacement();
-        else ++active.x;
-        break;
+        
+        if (canMove(stormtrooper)) {
+          this.board = stormtrooper;
+          active.updatePlacement({ x: -1 });
+          this.updateView();
+        } else {
+          ++active.x;
+        }
+      break;
         
       case 39:
         if (!active) break;
         if (active.x === this.size - active.width ) break;
         
         ++active.x;
-        if (active.canContinue()) active.updatePlacement();
-        else --active.x;
-        break;
+        
+        if (canMove(stormtrooper)) {
+          this.board = stormtrooper;
+          active.updatePlacement({ x: 1 });
+          this.updateView();
+        } else {
+          --active.x;
+        }
+      break;
         
       case 40:
-        if (active.y + active.height === this.size) break;
+        if (active.y + active.height - 1 === this.size) break;
       
         ++active.y;
-        if (active.canContinue()) active.updatePlacement();
-        else --active.y;
-        break;
+        
+        if (active.canContinue()) {
+          this.board = stormtrooper;
+          active.updatePlacement();
+          this.updateView();
+        } else {
+          --active.y;
+        }
+      break;
         
       case 16:
         if (!active) return false;
@@ -70,6 +102,7 @@ class Blocks {
           height: currentHeight
         } = active;
         const shape = [];
+        
         for (let i = active.shape[0].length - 1; i >= 0; i--) {
           const row = [];
           for (let j = 0; j < active.shape.length; j++) {
@@ -83,14 +116,23 @@ class Blocks {
         active.width = shape[0].length;
         if (active.x + active.width > this.size - 1) --active.x;
         
-        if (active.canContinue()) active.updatePlacement();
-        else {
+        if (active.canContinue()) {
+          this.board = stormtrooper;
+          active.updatePlacement();
+          this.updateView();
+        } else {
           active.shape = currentShape;
           active.x = currentX;
           active.width = currentWidth;
           active.height = currentHeight;
         }
+      break;
     }
+  }
+  
+  gameOver () {
+    this.stop();
+    this.fireEvent('gameover');
   }
   
   checkForGameOver () {
@@ -112,6 +154,7 @@ class Blocks {
   }
   
   advanceActivePiece () {
+    ++this.active.y;
     this.active.updatePlacement();
     this.updateView();
   }
@@ -119,8 +162,22 @@ class Blocks {
   generatePiece () {
     const rand = Math.floor(Math.random() * this.shapes.length);
     const shape = this.shapes[rand];
-    this.active = new shape(this);
+    // this.active = new shape(this);
+    this.active = new shapes.ShapeS(this);
     this.fireEvent('newpiece');
+    
+    if (this.active.pieceIsBelow()) this.gameOver();
+  }
+  
+  gameplay () {
+    if (this.active && this.active.canContinue()) {
+      this.advanceActivePiece();
+    } else {
+      this.active = null;
+      this.checkForCompleteRow();
+      this.generatePiece();
+      this.updateView();
+    }
   }
   
   stop () {
@@ -129,28 +186,10 @@ class Blocks {
     this.fireEvent('pause');
   }
   
-  gameplay () {
-    if (!this.active) {
-      this.checkForCompleteRow();
-      this.generatePiece();
-    } else if (this.active.canContinue()) {
-      this.advanceActivePiece();
-    } else {
-      this.active = null;
-      this.checkForCompleteRow();
-      this.generatePiece();
-    }
-  }
-  
   start () {
     this.playInterval = setInterval(this.gameplay.bind(this), this.speed);
     this.playing = true;
     this.fireEvent('play');
-  }
-  
-  gameOver () {
-    this.stop();
-    this.fireEvent('gameover');
   }
   
   initBoard () {
@@ -176,7 +215,7 @@ class Blocks {
       }
     `;
     
-    document.head.appendChild(style);
+    this.target.parentNode.appendChild(style);
   }
   
   namespace (...args) {
